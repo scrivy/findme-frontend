@@ -3,13 +3,14 @@
 <head>
     <title>find me</title>
     <meta charset='utf-8'>
+    <base href="/">
     <meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no'>
     <link rel='stylesheet' type='text/css' href='http://fonts.googleapis.com/css?family=Roboto:100,200,300,400,500,600,700'>
     <link rel='stylesheet' type='text/css' href="bower_components/semantic-ui/dist/semantic.min.css">
     <link rel='stylesheet' type='text/css' href="bower_components/leaflet/dist/leaflet.css">
     <link rel="stylesheet" type="text/css" href="app.css">
 </head>
-<body>
+<body ng-app="findme" ng-controller="AppController as app">
 
 <div class='ui inverted menu'>
     <a class='active item'>
@@ -22,7 +23,10 @@
         </a>
     </div>
 </div>
-<div id='map'></div>
+
+<div router-view-port></div>
+
+<!-- <div id='map'></div> -->
 
 <div class="ui modal">
     <i class="close icon"></i>
@@ -34,9 +38,15 @@
     </div>
 </div>
 
+
+
 <script src="bower_components/jquery/dist/jquery.min.js"></script>
 <script src="bower_components/semantic-ui/dist/semantic.min.js"></script>
 <script src="bower_components/leaflet/dist/leaflet.js"></script>
+<script src="vendor/angular.min.js"></script>
+<script src="vendor/router.es5.js"></script>
+
 <script src="app.js"></script>
+<script src="components/map/map.js"></script>
 </body>
 </html>

@@ -46,10 +46,9 @@ function geoLocateService() {
 }
 
 function wsService() {
-    var lastConnectingAttempt,
-        handlers = {},
-        onOpenFns = [],
+    var handlers = {},
         that = this;
+//        onOpenFns = [];
 
     tryConnecting.call(this);
     setInterval(checkConnection.bind(this), 5000);
@@ -62,11 +61,12 @@ function wsService() {
     }
 
     function tryConnecting() {
-        lastConnectingAttempt = Date.now();
         this.ws = new WebSocket('ws://' + window.location.host + '/ws');
 
         this.ws.onopen = function() {
-            console.log('webSocket opened');
+            console.log('webSocket: opened');
+
+            /*
             while (onOpenFns.length) {
                 var fn = opOpenFns.pop();
                 fn();
@@ -74,7 +74,7 @@ function wsService() {
             }
             onOpenFns.forEach(function(fn) {
                 obj.fn();
-            })
+            }) */
         };
 
         this.ws.onmessage = function(event) {
@@ -133,7 +133,7 @@ function wsService() {
             switch (that.ws.readyState) {
                 case 0: // connecting
                     console.log('webSocket: connecting');
-                    onOpenFns.push(ws.send.bind(undefined, message));
+                //    onOpenFns.push(that.ws.send.bind(undefined, message));
                     break;
                 case 1: // open
                     that.ws.send(message);
@@ -141,7 +141,7 @@ function wsService() {
                 case 2: // closing
                 case 3: // closed
                     console.error('webSocket: closing or closed');
-                    onOpenFns.push(that.ws.send.bind(undefined, message));
+                //    onOpenFns.push(that.ws.send.bind(undefined, message));
                     break;
             };
 

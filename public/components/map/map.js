@@ -12,7 +12,6 @@ function mapController($scope, $cookies, ws, geoLocate) {
     var everyone = {};
 
     ws.on('allLocations', function(data) {
-        console.log(data);
 
         var locations = data.locations;
 
@@ -65,34 +64,29 @@ function mapController($scope, $cookies, ws, geoLocate) {
     });
 
     geoLocate.onSuccess(function(position) {
-        console.log(position);
+console.log(position);
+        var data = {
+            latlng: [position.coords.latitude, position.coords.longitude],
+            accuracy: Math.ceil(position.coords.accuracy)
+        };
 
-        if (ws._ws && ws._ws.readyState) {
-            console.log('got a fix');
+        ws.send('updateLocation', data);
 
-            var data = {
-                latlng: [position.coords.latitude, position.coords.longitude],
-                accuracy: Math.ceil(position.coords.accuracy)
-            };
+        $scope.my.marker.setLatLng(data.latlng);
+        $scope.my.circle.
+            setLatLng(data.latlng).
+            setRadius(position.coords.accuracy)
+        ;
 
-            ws.send('updateLocation', data);
-
-            $scope.my.marker.setLatLng(data.latlng);
-            $scope.my.circle.
-                setLatLng(data.latlng).
-                setRadius(position.coords.accuracy)
-            ;
-
-            Object.keys(everyone).
-              forEach(function(id) {
-                everyone[id].line.
-                  setLatLngs([
-                    data.latlng,
-                    everyone[id].marker.getLatLng()
-                  ])
-              })
-            ;
-        }
+        Object.keys(everyone).
+          forEach(function(id) {
+            everyone[id].line.
+              setLatLngs([
+                data.latlng,
+                everyone[id].marker.getLatLng()
+              ])
+          })
+        ;
 
     });
 
@@ -117,6 +111,8 @@ function mapDirective() {
         restrict: 'E',
         link: function(scope, element) {
             scope.map = L.map(element[0]).setView([37.76, -122.44], 11);
+
+            scope.map.locate({setView: true, maxZoom: 16});
 
             L.tileLayer('/tiles/{z}/{x}/{y}.png').addTo(scope.map);
 

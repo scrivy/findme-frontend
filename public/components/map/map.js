@@ -63,8 +63,14 @@ function mapController($scope, $cookies, ws, geoLocate) {
 
     });
 
+    ws.on('updateLocationId', function(data) {
+        everyone[data.newId] = everyone[data.oldId];
+
+        delete everyone[data.oldId];
+    });
+
     geoLocate.onSuccess(function(position) {
-console.log(position);
+
         var data = {
             latlng: [position.coords.latitude, position.coords.longitude],
             accuracy: Math.ceil(position.coords.accuracy)
@@ -89,6 +95,26 @@ console.log(position);
         ;
 
     });
+
+    // fade markers
+    setInterval(function(everyone) {
+        Object.keys(everyone)
+            .forEach(function(id) {
+                var person = everyone[id]
+                , opacity = person.circle.options.opacity;
+
+                if (opacity > 0) {
+                    person.circle.setStyle({ opacity: opacity - 0.05});
+                    person.marker.setOpacity(person.marker.options.opacity - 0.1)
+                } else {
+                    $scope.map.removeLayer(person.circle);
+                    $scope.map.removeLayer(person.marker);
+                    $scope.map.removeLayer(person.line);
+                    delete everyone[id];
+                }
+            })
+        ;
+    }, 15000, everyone);
 
     // old jquery code, will convert later
     // modal

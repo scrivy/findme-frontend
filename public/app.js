@@ -9,7 +9,7 @@ angular.module('findme',[
     config(['$routeProvider', configRoutes]).
 
     factory('geoLocate', [geoLocateService]).
-    factory('ws', [wsService])
+    factory('ws', ['geoLocate', wsService])
 ;
 
 function configRoutes ($routeProvider) {
@@ -26,10 +26,11 @@ function geoLocateService() {
 
     window.navigator.geolocation.watchPosition(geo_success, geo_error, {enableHighAccuracy: true});
 
-    function geo_success(position) {
+    function geo_success(newPosition) {
+        self.position = newPosition;
         onSuccessFns.
             forEach(function(fn) {
-                fn(position);
+                fn(newPosition);
             })
         ;
     }
@@ -38,14 +39,15 @@ function geoLocateService() {
     	console.log('geolocation error');
     }
 
-    return {
+    return self = {
         onSuccess: function(fn) {
             onSuccessFns.push(fn);
-        }
+        },
+        position: null
     };
 }
 
-function wsService() {
+function wsService(geoLocate) {
     var handlers = {},
         that = this;
 //        onOpenFns = [];
@@ -65,6 +67,25 @@ function wsService() {
 
         this.ws.onopen = function() {
             console.log('webSocket: opened');
+
+            if (geoLocate.position) {
+                var position = geoLocate.position,
+                    data = {
+                        latlng: [position.coords.latitude, position.coords.longitude],
+                        accuracy: Math.ceil(position.coords.accuracy)
+                    }
+                ;
+
+                var message;
+                try {
+                    message = JSON.stringify({ action: 'updateLocation', data: data});
+                } catch(e) {
+                    console.log('webSocket error: json stringify error on send :',e);
+                    return;
+                };
+
+                this.send(message);
+            }
 
             /*
             while (onOpenFns.length) {
@@ -107,6 +128,7 @@ function wsService() {
         this.ws.onclose = function() {
             console.error('webSocket error: onclose cb');
         };
+
     }
 
     return {

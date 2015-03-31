@@ -15,6 +15,14 @@ function mapController($scope, $cookies, ws, geoLocate) {
 
         var locations = data.locations;
 
+        if (!geoLocate.position && data.yourLocation) {
+            $scope.my.marker.setLatLng(data.yourLocation.latlng);
+            $scope.my.circle.
+                setLatLng(data.yourLocation.latlng).
+                setRadius(data.yourLocation.accuracy)
+            ;
+        }
+
         Object.keys(locations).
             forEach(function(id) {
                 everyone[id] = {
@@ -28,13 +36,6 @@ function mapController($scope, $cookies, ws, geoLocate) {
 
         $cookies.put('id', data.id);
 
-        if (!geoLocate.position && data.yourLocation) {
-            $scope.my.marker.setLatLng(data.yourLocation.latlng);
-            $scope.my.circle.
-                setLatLng(data.yourLocation.latlng).
-                setRadius(data.yourLocation.accuracy)
-            ;
-        }
     });
 
     ws.on('updateLocation', function(location) {
@@ -122,7 +123,7 @@ function mapController($scope, $cookies, ws, geoLocate) {
                 }
             })
         ;
-    }, 15000, everyone);
+    }, 30000, everyone);
 
     // old jquery code, will convert later
     // modal

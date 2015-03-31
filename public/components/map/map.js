@@ -27,6 +27,14 @@ function mapController($scope, $cookies, ws, geoLocate) {
         ;
 
         $cookies.put('id', data.id);
+
+        if (!geoLocate.position && data.yourLocation) {
+            $scope.my.marker.setLatLng(data.yourLocation.latlng);
+            $scope.my.circle.
+                setLatLng(data.yourLocation.latlng).
+                setRadius(data.yourLocation.accuracy)
+            ;
+        }
     });
 
     ws.on('updateLocation', function(location) {

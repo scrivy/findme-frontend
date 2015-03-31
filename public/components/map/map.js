@@ -21,6 +21,8 @@ function mapController($scope, $cookies, ws, geoLocate) {
                 setLatLng(data.yourLocation.latlng).
                 setRadius(data.yourLocation.accuracy)
             ;
+
+            $scope.map.setView(data.yourLocation.latlng);
         }
 
         Object.keys(locations).

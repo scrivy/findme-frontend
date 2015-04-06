@@ -22,17 +22,35 @@ function configRoutes ($routeProvider) {
 }
 
 function geoLocateService() {
-    var onSuccessFns = [];
+    var onSuccessFns = [],
+        onFirstSuccessFns = [],
+        geo_success = onFirstSuccess;
 
-    window.navigator.geolocation.watchPosition(geo_success, geo_error, {enableHighAccuracy: true});
+    window.navigator.geolocation.watchPosition(formatPosition, geo_error, {enableHighAccuracy: true});
 
-    function geo_success(newPosition) {
+    function formatPosition(position) {
+        geo_success({
+            latlng: [position.coords.latitude, position.coords.longitude],
+            accuracy: Math.ceil(position.coords.accuracy)
+        });
+    }
+
+    function onSuccess(newPosition) {
         self.position = newPosition;
         onSuccessFns.
             forEach(function(fn) {
                 fn(newPosition);
             })
         ;
+    }
+
+    function onFirstSuccess(newPosition) {
+        geo_success = onSuccess;
+        self.position = newPosition;
+        while (onFirstSuccessFns.length) {
+            var fn = onFirstSuccessFns.pop();
+            fn(newPosition);
+        };
     }
 
     function geo_error() {
@@ -43,6 +61,9 @@ function geoLocateService() {
         onSuccess: function(fn) {
             onSuccessFns.push(fn);
         },
+        onFirstSuccess: function(fn) {
+            onFirstSuccess.push(fn);
+        }
         position: null
     };
 }
@@ -50,7 +71,6 @@ function geoLocateService() {
 function wsService(geoLocate) {
     var handlers = {},
         that = this;
-//        onOpenFns = [];
 
     tryConnecting.call(this);
     setInterval(checkConnection.bind(this), 5000);
@@ -87,15 +107,6 @@ function wsService(geoLocate) {
                 this.send(message);
             }
 
-            /*
-            while (onOpenFns.length) {
-                var fn = opOpenFns.pop();
-                fn();
-                console.log('webSocket: onOpen, dequeued fn');
-            }
-            onOpenFns.forEach(function(fn) {
-                obj.fn();
-            }) */
         };
 
         this.ws.onmessage = function(event) {
@@ -155,7 +166,6 @@ function wsService(geoLocate) {
             switch (that.ws.readyState) {
                 case 0: // connecting
                     console.log('webSocket: connecting');
-                //    onOpenFns.push(that.ws.send.bind(undefined, message));
                     break;
                 case 1: // open
                     that.ws.send(message);
@@ -163,7 +173,6 @@ function wsService(geoLocate) {
                 case 2: // closing
                 case 3: // closed
                     console.error('webSocket: closing or closed');
-                //    onOpenFns.push(that.ws.send.bind(undefined, message));
                     break;
             };
 

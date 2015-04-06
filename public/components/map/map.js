@@ -82,17 +82,12 @@ function mapController($scope, $cookies, ws, geoLocate) {
 
     geoLocate.onSuccess(function(position) {
 
-        var data = {
-            latlng: [position.coords.latitude, position.coords.longitude],
-            accuracy: Math.ceil(position.coords.accuracy)
-        };
+        ws.send('updateLocation', position);
 
-        ws.send('updateLocation', data);
-
-        $scope.my.marker.setLatLng(data.latlng);
+        $scope.my.marker.setLatLng(position.latlng);
         $scope.my.circle.
-            setLatLng(data.latlng).
-            setRadius(position.coords.accuracy)
+            setLatLng(position.latlng).
+            setRadius(position.accuracy)
         ;
 
         Object.keys(everyone).
@@ -107,12 +102,30 @@ function mapController($scope, $cookies, ws, geoLocate) {
 
     });
 
+    geoLocate.onFirstSuccess(function(position) {
+        $scope.my = {
+            marker: L.marker(position.latlng, {
+                icon: L.icon({
+                    iconUrl: 'images/mymarker.png',
+                    iconSize: [25, 41],
+                    iconAnchor: [12, 40]
+                }),
+                alt: "Me!"
+            }).addTo(scope.map),
+            circle: L.circle(position.latlng, position.accuracy, {
+                fillOpacity: 0.5
+            }).addTo(scope.map)
+        };
+
+        ws.send('updateLocation', position);
+    });
+
     // fade markers
     setInterval(function(everyone) {
         Object.keys(everyone)
             .forEach(function(id) {
-                var person = everyone[id]
-                , opacity = person.circle.options.opacity;
+                var person = everyone[id],
+                    opacity = person.circle.options.opacity;
 
                 if (opacity > 0) {
                     person.circle.setStyle({ opacity: opacity - 0.05});
@@ -152,20 +165,6 @@ function mapDirective() {
             scope.map.locate({setView: true, maxZoom: 16});
 
             L.tileLayer('/tiles/{z}/{x}/{y}.png').addTo(scope.map);
-
-            scope.my = {
-                marker: L.marker([0, 0], {
-                    icon: L.icon({
-                        iconUrl: 'images/mymarker.png',
-                        iconSize: [25, 41],
-                        iconAnchor: [12, 40]
-                    }),
-                    alt: "Me!"
-                }).addTo(scope.map),
-                circle: L.circle([0, 0], 50, {
-                    fillOpacity: 0.5
-                }).addTo(scope.map)
-            };
         }
     };
 }

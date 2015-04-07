@@ -26,17 +26,18 @@ function geoLocateService() {
         onFirstSuccessFns = [],
         geo_success = onFirstSuccess;
 
-    window.navigator.geolocation.watchPosition(formatPosition, geo_error, {enableHighAccuracy: true});
+    window.navigator.geolocation.watchPosition(formatAndStorePosition, geo_error, {enableHighAccuracy: true});
 
-    function formatPosition(position) {
-        geo_success({
+    function formatAndStorePosition(position) {
+        var formattedPosition = {
             latlng: [position.coords.latitude, position.coords.longitude],
             accuracy: Math.ceil(position.coords.accuracy)
-        });
+        };
+        self.position = newPosition;
+        geo_success(formattedPosition);
     }
 
     function onSuccess(newPosition) {
-        self.position = newPosition;
         onSuccessFns.
             forEach(function(fn) {
                 fn(newPosition);
@@ -46,7 +47,6 @@ function geoLocateService() {
 
     function onFirstSuccess(newPosition) {
         geo_success = onSuccess;
-        self.position = newPosition;
         while (onFirstSuccessFns.length) {
             var fn = onFirstSuccessFns.pop();
             fn(newPosition);
@@ -89,16 +89,9 @@ function wsService(geoLocate) {
             console.log('webSocket: opened');
 
             if (geoLocate.position) {
-                var position = geoLocate.position,
-                    data = {
-                        latlng: [position.coords.latitude, position.coords.longitude],
-                        accuracy: Math.ceil(position.coords.accuracy)
-                    }
-                ;
-
                 var message;
                 try {
-                    message = JSON.stringify({ action: 'updateLocation', data: data});
+                    message = JSON.stringify({ action: 'updateLocation', data: geoLocate.position});
                 } catch(e) {
                     console.log('webSocket error: json stringify error on send :',e);
                     return;
@@ -143,7 +136,6 @@ function wsService(geoLocate) {
     }
 
     return {
-
         on: function(name, fn) {
             if (!name || !fn) return console.error("webSocket error: ws.on('name', function(data) {}): something's missing...");
 

@@ -33,7 +33,7 @@ function geoLocateService() {
             latlng: [position.coords.latitude, position.coords.longitude],
             accuracy: Math.ceil(position.coords.accuracy)
         };
-        self.position = newPosition;
+        self.position = formattedPosition;
         geo_success(formattedPosition);
     }
 

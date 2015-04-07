@@ -1,124 +1,115 @@
 'use strict';
 
 angular.module('findme.map', []).
-
     controller('mapController', ['$scope', '$cookies', 'ws', 'geoLocate', mapController]).
-
-    directive('map', mapDirective)
-
-;
+    directive('map', mapDirective);
 
 function mapController($scope, $cookies, ws, geoLocate) {
     var everyone = {};
 
     ws.on('allLocations', function(data) {
-
-        var locations = data.locations;
-
         if (!geoLocate.position && data.yourLocation) {
-            $scope.my.marker.setLatLng(data.yourLocation.latlng);
-            $scope.my.circle.
-                setLatLng(data.yourLocation.latlng).
-                setRadius(data.yourLocation.accuracy)
-            ;
-
+            updateMyLocation(data.yourLocation);
             $scope.map.setView(data.yourLocation.latlng);
         }
 
-        Object.keys(locations).
-            forEach(function(id) {
-                everyone[id] = {
-                    marker: L.marker(locations[id].latlng).addTo($scope.map),
-                    circle: L.circle(locations[id].latlng, locations[id].accuracy).addTo($scope.map),
-                    line: L.polyline([$scope.my.marker.getLatLng(), locations[id].latlng]).addTo($scope.map),
-                    trail: L.polyline([locations[id].latlng]).addTo($scope.map)
-                };
-            })
-        ;
+        data.locations.forEach(updateTheirLocation);
 
         $cookies.put('id', data.id);
-
     });
 
-    ws.on('updateLocation', function(location) {
-
-        if (everyone[location.id]) {
-            var thisGuy = everyone[location.id];
-
-            thisGuy.marker.
-                setLatLng(location.latlng).
-                setOpacity(1);
-
-            thisGuy.circle.
-                setLatLng(location.latlng).
-                setRadius(location.accuracy).
-                setStyle({opacity: 0.5});
-
-            thisGuy.line.
-                setLatLngs([
-                    $scope.my.marker.getLatLng(),
-                    location.latlng
-                ]);
-
-            thisGuy.trail.
-                addLatLng(location.latlng);
-
-        } else {
-            everyone[location.id] = {
-                marker: L.marker(location.latlng).addTo($scope.map),
-                circle: L.circle(location.latlng, location.accuracy).addTo($scope.map),
-                line: L.polyline([$scope.my.marker.getLatLng(), location.latlng]).addTo($scope.map),
-                trail: L.polyline([location.latlng]).addTo($scope.map)
-            };
-        }
-
-    });
+    ws.on('updateLocation', updateTheirLocation);
 
     ws.on('updateLocationId', function(data) {
         everyone[data.newId] = everyone[data.oldId];
-
         delete everyone[data.oldId];
     });
 
     geoLocate.onSuccess(function(position) {
-
         ws.send('updateLocation', position);
-
-        $scope.my.marker.setLatLng(position.latlng);
-        $scope.my.circle.
-            setLatLng(position.latlng).
-            setRadius(position.accuracy)
-        ;
+        updateMyLocation(position);
 
         Object.keys(everyone).
           forEach(function(id) {
             everyone[id].line.
               setLatLngs([
-                data.latlng,
+                position.latlng,
                 everyone[id].marker.getLatLng()
               ])
           })
         ;
-
     });
 
     geoLocate.onFirstSuccess(function(position) {
-        $scope.my = {
-            marker: L.marker(position.latlng, {
-                icon: L.icon({
-                    iconUrl: 'images/mymarker.png',
-                    iconSize: [25, 41],
-                    iconAnchor: [12, 40]
-                }),
-                alt: "Me!"
-            }).addTo(scope.map),
-            circle: L.circle(position.latlng, position.accuracy, {
-                fillOpacity: 0.5
-            }).addTo(scope.map)
-        };
-
         ws.send('updateLocation', position);
+        updateMyLocation(position);
     });
+
+    function updateMyLocation(position) {
+        if ($scope.my) {
+            $scope.my.marker.setLatLng(position.latlng);
+            $scope.my.circle.
+                setLatLng(position.latlng).
+                setRadius(position.accuracy)
+            ;
+        } else {
+            $scope.my = {
+                marker: L.marker(position.latlng, {
+                    icon: L.icon({
+                        iconUrl: 'images/mymarker.png',
+                        iconSize: [25, 41],
+                        iconAnchor: [12, 40]
+                    }),
+                    alt: "Me!"
+                }).addTo($scope.map),
+                circle: L.circle(position.latlng, position.accuracy, {
+                    fillOpacity: 0.5
+                }).addTo($scope.map)
+            };
+        }
+    }
+
+    function updateTheirLocation(position) {
+        var thisGuy;
+        if (everyone[position.id]) {
+            thisGuy = everyone[position.id];
+
+            thisGuy.marker.
+                setLatLng(position.latlng).
+                setOpacity(1);
+
+            thisGuy.circle.
+                setLatLng(position.latlng).
+                setRadius(position.accuracy).
+                setStyle({opacity: 0.5});
+
+            thisGuy.trail.
+                addLatLng(position.latlng);
+
+            if ($scope.my) {
+                if (thisGuy.line) {
+                    thisGuy.line.setLatLngs([
+                        $scope.my.marker.getLatLng(),
+                        position.latlng
+                    ]);
+                } else {
+                    thisGuy.line = L.polyline([$scope.my.marker.getLatLng(), position.latlng]).addTo($scope.map);
+                }
+            }
+        } else {
+            thisGuy = everyone[position.id] = {
+                marker: L.marker(position.latlng).addTo($scope.map),
+                circle: L.circle(position.latlng, position.accuracy).addTo($scope.map),
+                trail: L.polyline([position.latlng]).addTo($scope.map),
+                line: null,
+            };
+
+            if ($scope.my) {
+                thisGuy.line = L.polyline([$scope.my.marker.getLatLng(), position.latlng]).addTo($scope.map);
+            }
+
+        }
+    }
 
     // fade markers
     setInterval(function(everyone) {

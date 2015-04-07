@@ -62,8 +62,8 @@ function geoLocateService() {
             onSuccessFns.push(fn);
         },
         onFirstSuccess: function(fn) {
-            onFirstSuccess.push(fn);
-        }
+            onFirstSuccessFns.push(fn);
+        },
         position: null
     };
 }

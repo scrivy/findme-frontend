@@ -15,7 +15,7 @@ function mapController($scope, $cookies, ws, geoLocate) {
 
         data.locations.forEach(updateTheirLocation);
 
-        $cookies.put('id', data.id);
+        $cookies.put('id', data.id, {expires: new Date().addHours(1)});
     });
 
     ws.on('updateLocation', updateTheirLocation);
@@ -29,6 +29,7 @@ function mapController($scope, $cookies, ws, geoLocate) {
         ws.send('updateLocation', position);
         updateMyLocation(position);
 
+        // error getting thrown when line doesn't exist
         Object.keys(everyone).
           forEach(function(id) {
             everyone[id].line.

@@ -112,6 +112,10 @@ function mapController($scope, $cookies, ws, geoLocate) {
         }
     }
 
+    function redrawLines(id) {
+        
+    }
+
     // fade markers
     setInterval(function(everyone) {
         Object.keys(everyone)

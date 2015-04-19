@@ -28,17 +28,6 @@ function mapController($scope, $cookies, ws, geoLocate) {
     geoLocate.onSuccess(function(position) {
         ws.send('updateLocation', position);
         updateMyLocation(position);
-
-        // error getting thrown when line doesn't exist
-        Object.keys(everyone).
-          forEach(function(id) {
-            everyone[id].line.
-              setLatLngs([
-                position.latlng,
-                everyone[id].marker.getLatLng()
-              ])
-          })
-        ;
     });
 
     geoLocate.onFirstSuccess(function(position) {
@@ -68,12 +57,12 @@ function mapController($scope, $cookies, ws, geoLocate) {
                 }).addTo($scope.map)
             };
         }
+        redrawLines();
     }
 
     function updateTheirLocation(position) {
-        var thisGuy;
         if (everyone[position.id]) {
-            thisGuy = everyone[position.id];
+            var thisGuy = everyone[position.id];
 
             thisGuy.marker.
                 setLatLng(position.latlng).
@@ -87,33 +76,44 @@ function mapController($scope, $cookies, ws, geoLocate) {
             thisGuy.trail.
                 addLatLng(position.latlng);
 
-            if ($scope.my) {
-                if (thisGuy.line) {
-                    thisGuy.line.setLatLngs([
-                        $scope.my.marker.getLatLng(),
-                        position.latlng
-                    ]);
-                } else {
-                    thisGuy.line = L.polyline([$scope.my.marker.getLatLng(), position.latlng]).addTo($scope.map);
-                }
-            }
+
         } else {
-            thisGuy = everyone[position.id] = {
+            everyone[position.id] = {
                 marker: L.marker(position.latlng).addTo($scope.map),
                 circle: L.circle(position.latlng, position.accuracy).addTo($scope.map),
                 trail: L.polyline([position.latlng]).addTo($scope.map),
                 line: null,
             };
-
-            if ($scope.my) {
-                thisGuy.line = L.polyline([$scope.my.marker.getLatLng(), position.latlng]).addTo($scope.map);
-            }
-
         }
+
+        redrawLines(position.id);
     }
 
     function redrawLines(id) {
-        
+        if (!$scope.my) return;
+
+        if (!id) { // redraw all lines
+            Object.keys(everyone).
+                forEach(function(id) {
+                    updateOrCreateLine(everyone[id]);
+                })
+            ;
+        } else {
+            updateOrCreateLine(everyone[id]);
+        }
+
+        function updateOrCreateLine(thisGuy) {
+            if (thisGuy.line) {
+                thisGuy.line.
+                   setLatLngs([
+                       $scope.my.marker.getLatLng(),
+                       thisGuy.marker.getLatLng()
+                   ])
+                ;
+            } else {
+                thisGuy.line = L.polyline([$scope.my.marker.getLatLng(), thisGuy.marker.getLatLng()]).addTo($scope.map);
+            }
+        }
     }
 
     // fade markers

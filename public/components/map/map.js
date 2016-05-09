@@ -13,7 +13,7 @@ function mapController($scope, $cookies, ws, geoLocate) {
             $scope.map.setView(data.yourLocation.latlng);
         }
 
-        data.locations.forEach(updateTheirLocation);
+        data.forEach(updateTheirLocation);
 
         $cookies.put('id', data.id, {expires: new Date().addHours(1)});
     });

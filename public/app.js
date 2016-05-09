@@ -83,7 +83,7 @@ function wsService(geoLocate) {
     }
 
     function tryConnecting() {
-        this.ws = new WebSocket('ws://' + window.location.host + '/ws');
+        this.ws = new WebSocket('wss://' + window.location.host + '/ws');
 
         this.ws.onopen = function() {
             console.log('webSocket: opened');
